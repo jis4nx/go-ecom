@@ -1,0 +1,42 @@
+services:
+  db:
+    container_name: postgres
+    image: postgres:15.6-alpine3.19
+    restart: always
+    env_file:
+      - dev.env
+    networks:
+        - gocom
+
+  
+
+  rabbit:
+    container_name: rabbitmq
+    image: rabbitmq:3.13-management
+    hostname: rabbit
+    networks:
+        - gocom
+    env_file:
+      - dev.env
+
+  product-service:
+    container_name: productcont
+    build:
+      context: .
+      dockerfile: product/Dockerfile
+    env_file:
+      - dev.env
+    networks:
+        - gocom
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    depends_on:
+      - db
+      - rabbit
+
+
+networks:
+  gocom:
+
+volumes:
+  postgres_data:
