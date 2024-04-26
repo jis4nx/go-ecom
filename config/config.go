@@ -13,9 +13,21 @@ type Server struct {
 	PORT string
 }
 
+type RabbitMQ struct {
+	USER     string
+	PASSWORD string
+	HOST     string
+	VHOST    string
+}
+
+type Services struct {
+	ProductServer Server
+}
+
 type Config struct {
 	DB       Database
-	Services []Server
+	RQ       RabbitMQ
+	Services Services
 }
 
 func LoadServer(env map[string]string, defautHost, defaultPort string) Server {
@@ -47,8 +59,14 @@ func LoadConfig(env map[string]string) Config {
 			DBPORT: env["DBPORT"],
 			DBPASS: env["DBPASS"],
 		},
-		Services: []Server{
-			GetProductServer(env),
+		Services: Services{
+			ProductServer: GetProductServer(env),
+		},
+		RQ: RabbitMQ{
+			USER:     env["RABBIT_USER"],
+			PASSWORD: env["RABBIT_PASS"],
+			VHOST:    env["RABBIT_VHOST"],
+			HOST:     env["RABBIT_HOST"],
 		},
 	}
 	return cfg
