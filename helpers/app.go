@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jis4nx/go-ecom/config"
 	"github.com/jis4nx/go-ecom/helpers/rabbit"
 )
@@ -19,7 +20,7 @@ type App struct {
 	Rabbit *rabbit.RabbitClient
 }
 
-func NewApp(c config.Config, router http.Handler) *App {
+func NewApp(c config.Config) *App {
 	dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", c.DB.DBUSER, c.DB.DBPASS, c.DB.DBHOST, c.DB.DBPORT, c.DB.DBNAME)
 
 	conn, err := rabbit.ConnectRabbitMQ(c.RQ.USER, c.RQ.PASSWORD, c.RQ.HOST, c.RQ.VHOST)
@@ -43,10 +44,13 @@ func NewApp(c config.Config, router http.Handler) *App {
 		Cfg:    c,
 		PGDB:   pgdb,
 		Rabbit: &client,
-		Router: router,
 	}
 
 	return app
+}
+
+func (app *App) AddRoutes(router chi.Router) {
+	app.Router = router
 }
 
 func (app *App) Start(ctx context.Context) error {
