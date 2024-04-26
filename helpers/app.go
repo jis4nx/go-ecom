@@ -1,4 +1,4 @@
-package api
+package helpers
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 )
 
 type App struct {
-	router http.Handler
-	cfg    config.Config
-	pgdb   *sql.DB
-	rabbit *rabbit.RabbitClient
+	Router http.Handler
+	Cfg    config.Config
+	PGDB   *sql.DB
+	Rabbit *rabbit.RabbitClient
 }
 
 func NewApp(c config.Config, router http.Handler) *App {
@@ -40,10 +40,10 @@ func NewApp(c config.Config, router http.Handler) *App {
 	}
 
 	app := &App{
-		cfg:    c,
-		pgdb:   pgdb,
-		rabbit: &client,
-    router: router,
+		Cfg:    c,
+		PGDB:   pgdb,
+		Rabbit: &client,
+		Router: router,
 	}
 
 	return app
@@ -51,8 +51,8 @@ func NewApp(c config.Config, router http.Handler) *App {
 
 func (app *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", app.cfg.Services.ProductServer.HOST, app.cfg.Services.ProductServer.PORT),
-		Handler: app.router,
+		Addr:    fmt.Sprintf("%s:%s", app.Cfg.Services.ProductServer.HOST, app.Cfg.Services.ProductServer.PORT),
+		Handler: app.Router,
 	}
 
 	go func() {
