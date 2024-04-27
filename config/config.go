@@ -30,23 +30,18 @@ type Config struct {
 	Services Services
 }
 
-func LoadServer(env map[string]string, defautHost, defaultPort string) Server {
-	host := env["PRODUCT_HOST"]
+func LoadServer(env map[string]string, defaultPort string) Server {
 	port := env["PRODUCT_PORT"]
-
-	if host == "" {
-		host = "localhost"
-	}
 
 	if port == "" {
 		port = "4001"
 	}
-	productServer := Server{HOST: host, PORT: port}
+	productServer := Server{PORT: port}
 	return productServer
 }
 
 func GetProductServer(env map[string]string) Server {
-	productServer := LoadServer(env, "localhost", "4001")
+	productServer := LoadServer(env, "4001")
 	return productServer
 }
 
