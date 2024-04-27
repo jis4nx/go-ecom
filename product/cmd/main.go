@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/jis4nx/go-ecom/config"
 	"github.com/jis4nx/go-ecom/helpers"
@@ -14,7 +15,13 @@ import (
 )
 
 func main() {
-	envVars, err := godotenv.Read("dev.env")
+	base, err := os.Getwd()
+	if err != nil {
+		log.Fatal("Failed to retrieve current dir", err.Error())
+	}
+	abs := filepath.Join(base, "dev.env")
+
+	envVars, err := godotenv.Read(abs)
 	if err != nil {
 		log.Fatal("Failed to load environment variables")
 	}
