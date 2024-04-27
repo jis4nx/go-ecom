@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jis4nx/go-ecom/config"
 	"github.com/jis4nx/go-ecom/helpers/rabbit"
+	_ "github.com/lib/pq"
 )
 
 type App struct {
@@ -20,8 +21,22 @@ type App struct {
 	Rabbit *rabbit.RabbitClient
 }
 
+// Wrapper Function to connect to Postgres DB
+func ConnectPG(host, user, password, dbName, port string) *sql.DB {
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable", host, port, user, dbName, password)
+	pgdb, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		log.Fatal("Failed to connect postgres server", err.Error())
+	}
+
+	if err = pgdb.Ping(); err != nil {
+		log.Fatal("Failed to  ping the server", err.Error())
+	}
+	return pgdb
+}
+
 func NewApp(c config.Config) *App {
-	dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", c.DB.DBUSER, c.DB.DBPASS, c.DB.DBHOST, c.DB.DBPORT, c.DB.DBNAME)
+	pgdb := ConnectPG(c.DB.DBHOST, c.DB.DBUSER, c.DB.DBPASS, c.DB.DBNAME, c.DB.DBPORT)
 
 	conn, err := rabbit.ConnectRabbitMQ(c.RQ.USER, c.RQ.PASSWORD, c.RQ.HOST, c.RQ.VHOST)
 	if err != nil {
@@ -31,15 +46,6 @@ func NewApp(c config.Config) *App {
 	if err != nil {
 		log.Fatal("Failed to create Rabbitmq channel", err.Error())
 	}
-	pgdb, err := sql.Open("postgres", dbString)
-	if err != nil {
-		log.Fatal("Failed to connect postgres server", err.Error())
-	}
-
-	if err = pgdb.Ping(); err != nil {
-		log.Fatal("Failed to  ping the server", err.Error())
-	}
-
 	app := &App{
 		Cfg:    c,
 		PGDB:   pgdb,
@@ -53,11 +59,14 @@ func (app *App) AddRoutes(router chi.Router) {
 	app.Router = router
 }
 
+// Starts the Respected app server
 func (app *App) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", app.Cfg.Services.ProductServer.HOST, app.Cfg.Services.ProductServer.PORT),
+		Addr:    fmt.Sprintf("%s:%s", "product", app.Cfg.Services.ProductServer.PORT),
 		Handler: app.Router,
 	}
+
+	log.Printf("Server Started on %s:%s", "product", app.Cfg.Services.ProductServer.PORT)
 
 	go func() {
 		err := server.ListenAndServe()
