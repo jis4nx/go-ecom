@@ -26,13 +26,15 @@ func main() {
 		log.Fatal("Failed to load environment variables")
 	}
 
-	var prodcutApp api.ProductApp
+	var productApp api.ProductApp
 
 	cfg := config.LoadConfig(envVars)
 	app := helpers.NewApp(cfg)
 
-	router := prodcutApp.LoadRoutes()
+	router := productApp.LoadRoutes()
 	app.AddRoutes(router)
+
+  productApp.SetProductApp(app)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
