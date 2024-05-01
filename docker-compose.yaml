@@ -11,6 +11,11 @@ services:
         - gocom
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
   
 
   rabbit:
@@ -24,24 +29,38 @@ services:
         - gocom
     env_file:
       - dev.env
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
 
   product-service:
     container_name: productcont
     restart: on-failure
     hostname: product
-    build:
-      context: .
-      dockerfile: product/Dockerfile
     env_file:
       - dev.env
+    build:
+      args:
+        BUILD_TYPE: ${BUILD_TYPE}
+      context: .
+      dockerfile: product/${BUILD_TYPE}.Dockerfile
+    volumes:
+      - ./product:/app/product
+      - ./helpers:/app/helpers
+      - ./config:/app/config
     networks:
-        - gocom
+      - gocom
     ports:
       - "4001:4001"
     depends_on:
-      - db
-      - rabbit
+      db:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+
 
 
 networks:
@@ -49,4 +68,3 @@ networks:
 
 volumes:
   postgres_data:
-
