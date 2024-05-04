@@ -69,7 +69,7 @@ func (app *App) Start(ctx context.Context) error {
 		Handler: app.Router,
 	}
 
-  app.Logger.Info("Server Started", zap.String("port", app.Cfg.Services.ProductServer.PORT))
+  app.Logger.Info("Server Started")
 
 	go func() {
 		err := server.ListenAndServe()

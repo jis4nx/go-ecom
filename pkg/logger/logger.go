@@ -4,7 +4,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/jis4nx/go-ecom/helpers/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -15,12 +17,23 @@ type Logger struct {
 	File io.Writer
 }
 
-func (l *Logger) InitLogger() {
-	l.Logger = newLogger(os.Stdout, l.File)
+func (l *Logger) InitLogger(s types.ServiceInfo) {
+	rootLogger := newLogger(os.Stdout, l.File)
+	childLogger := rootLogger.With(
+		zap.String("service", s.Name),
+		zap.String("host", s.Host),
+		zap.String("port", s.Port),
+	)
+	l.Logger = childLogger
 }
 
-func (l *Logger) SetLogFile(file string) {
-	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+func (l *Logger) SetLogFile(baseLogDir, file string) {
+	logFile := filepath.Join(baseLogDir, "logs", file)
+	if err := os.MkdirAll(filepath.Dir(logFile), 0755); err != nil {
+		log.Fatal(err)
+	}
+
+	f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
