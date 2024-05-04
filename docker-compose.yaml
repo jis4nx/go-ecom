@@ -51,6 +51,7 @@ services:
       - ./product:/app/product
       - ./helpers:/app/helpers
       - ./config:/app/config
+      - ./pkg:/app/pkg
     networks:
       - gocom
     ports:

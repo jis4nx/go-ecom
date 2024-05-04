@@ -5,6 +5,7 @@ WORKDIR /app
 COPY product/ ./product
 COPY helpers/ ./helpers
 COPY config/ ./config
+COPY pkg/ ./pkg
 
 COPY go.mod .
 COPY go.sum .
