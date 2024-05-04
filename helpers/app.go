@@ -10,8 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jis4nx/go-ecom/config"
-	"github.com/jis4nx/go-ecom/helpers/rabbit"
+	"github.com/jis4nx/go-ecom/pkg/logger"
+	"github.com/jis4nx/go-ecom/pkg/rabbit"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 type App struct {
@@ -19,6 +21,7 @@ type App struct {
 	Cfg    config.Config
 	PGDB   *sql.DB
 	Rabbit *rabbit.RabbitClient
+  Logger *logger.Logger
 }
 
 // Wrapper Function to connect to Postgres DB
@@ -66,19 +69,19 @@ func (app *App) Start(ctx context.Context) error {
 		Handler: app.Router,
 	}
 
-	log.Printf("Server Started on %s:%s", "product", app.Cfg.Services.ProductServer.PORT)
+  app.Logger.Info("Server Started", zap.String("port", app.Cfg.Services.ProductServer.PORT))
 
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			log.Fatal(err.Error())
+      app.Logger.Fatal("Failed to Start server", zap.Error(err))
 		}
 	}()
 
 	select {
 	case <-ctx.Done():
 		timeout, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		fmt.Printf("Received Interrupt Signal, Closing Server")
+    app.Logger.Info("Received Interrupt Signal, Closing Server")
 		defer cancel()
 
 		return server.Shutdown(timeout)
