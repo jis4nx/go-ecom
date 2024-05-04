@@ -1,6 +1,8 @@
 package rabbit
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -35,4 +37,23 @@ func (rc *RabbitClient) CreateBinding(name, routingKey, exchangeKey string) erro
 
 func (rc *RabbitClient) Consume(queueName, consumer string, autoAck bool) (<-chan amqp.Delivery, error) {
 	return rc.ch.Consume(queueName, consumer, autoAck, false, false, false, nil)
+}
+
+func (rc *RabbitClient) PublishMsgWithContext(ctx context.Context, exchangeKey, routingKey string, msg interface{}) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	return rc.ch.PublishWithContext(
+		ctx,
+		exchangeKey,
+		routingKey,
+		true,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Transient,
+			Body:         data,
+		},
+	)
 }
