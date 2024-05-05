@@ -46,9 +46,9 @@ services:
       args:
         BUILD_TYPE: ${BUILD_TYPE}
       context: .
-      dockerfile: product/${BUILD_TYPE}.Dockerfile
+      dockerfile: services/product/${BUILD_TYPE}.Dockerfile
     volumes:
-      - ./product:/app/product
+      - ./services:/app/services
       - ./helpers:/app/helpers
       - ./config:/app/config
       - ./pkg:/app/pkg
