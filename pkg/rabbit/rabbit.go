@@ -39,6 +39,10 @@ func (rc *RabbitClient) Consume(queueName, consumer string, autoAck bool) (<-cha
 	return rc.ch.Consume(queueName, consumer, autoAck, false, false, false, nil)
 }
 
+func (rc *RabbitClient) CreateExchange(name, exchangeType string, durable, autoDelete bool) error {
+	return rc.ch.ExchangeDeclare(name, exchangeType, durable, autoDelete, false, false, nil)
+}
+
 func (rc *RabbitClient) PublishMsgWithContext(ctx context.Context, exchangeKey, routingKey string, msg interface{}) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
