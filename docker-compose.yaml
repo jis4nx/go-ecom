@@ -53,6 +53,7 @@ services:
       - ./config:/app/config
       - ./pkg:/app/pkg
       - ./logs:/app/logs:rw
+      - ./dev.env:/app/dev.env
     networks:
       - gocom
     ports:
