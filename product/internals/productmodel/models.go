@@ -17,4 +17,5 @@ type Product struct {
 	Price       float64        `json:"price"`
 	Available   sql.NullBool   `json:"available"`
 	CreatedAt   time.Time      `json:"created_at"`
+	Version     int32          `json:"version"`
 }

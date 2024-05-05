@@ -11,7 +11,7 @@ import (
 )
 
 const getProduct = `-- name: GetProduct :one
-SELECT id, name, description, sku, price, available, created_at FROM product 
+SELECT id, name, description, sku, price, available, created_at, version FROM product 
   WHERE id=$1
 `
 
@@ -26,6 +26,7 @@ func (q *Queries) GetProduct(ctx context.Context, id int64) (Product, error) {
 		&i.Price,
 		&i.Available,
 		&i.CreatedAt,
+		&i.Version,
 	)
 	return i, err
 }
@@ -33,7 +34,7 @@ func (q *Queries) GetProduct(ctx context.Context, id int64) (Product, error) {
 const insertProduct = `-- name: InsertProduct :one
 INSERT INTO product (name, description, price, available)
   VALUES ($1, $2, $3, $4)
-  RETURNING id, name, description, sku, price, available, created_at
+  RETURNING id, name, description, sku, price, available, created_at, version
 `
 
 type InsertProductParams struct {
@@ -59,12 +60,13 @@ func (q *Queries) InsertProduct(ctx context.Context, arg InsertProductParams) (P
 		&i.Price,
 		&i.Available,
 		&i.CreatedAt,
+		&i.Version,
 	)
 	return i, err
 }
 
 const listProduct = `-- name: ListProduct :many
-SELECT id, name, description, sku, price, available, created_at FROM product
+SELECT id, name, description, sku, price, available, created_at, version FROM product
 `
 
 func (q *Queries) ListProduct(ctx context.Context) ([]Product, error) {
@@ -84,6 +86,7 @@ func (q *Queries) ListProduct(ctx context.Context) ([]Product, error) {
 			&i.Price,
 			&i.Available,
 			&i.CreatedAt,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}
@@ -96,4 +99,34 @@ func (q *Queries) ListProduct(ctx context.Context) ([]Product, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateProduct = `-- name: UpdateProduct :one
+UPDATE product
+SET name = $1, description = $2, price = $3, available = $4, version = version + 1
+  WHERE id = $5 AND version = $6
+RETURNING version
+`
+
+type UpdateProductParams struct {
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	Price       float64        `json:"price"`
+	Available   sql.NullBool   `json:"available"`
+	ID          int64          `json:"id"`
+	Version     int32          `json:"version"`
+}
+
+func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, updateProduct,
+		arg.Name,
+		arg.Description,
+		arg.Price,
+		arg.Available,
+		arg.ID,
+		arg.Version,
+	)
+	var version int32
+	err := row.Scan(&version)
+	return version, err
 }
