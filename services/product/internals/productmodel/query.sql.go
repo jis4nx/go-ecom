@@ -32,14 +32,15 @@ func (q *Queries) GetProduct(ctx context.Context, id int64) (Product, error) {
 }
 
 const insertProduct = `-- name: InsertProduct :one
-INSERT INTO product (name, description, price, available)
-  VALUES ($1, $2, $3, $4)
+INSERT INTO product (name, description,sku, price, available)
+  VALUES ($1, $2, $3, $4, $5)
   RETURNING id, name, description, sku, price, available, created_at, version
 `
 
 type InsertProductParams struct {
 	Name        string         `json:"name"`
 	Description sql.NullString `json:"description"`
+	Sku         sql.NullString `json:"sku"`
 	Price       float64        `json:"price"`
 	Available   sql.NullBool   `json:"available"`
 }
@@ -48,6 +49,7 @@ func (q *Queries) InsertProduct(ctx context.Context, arg InsertProductParams) (P
 	row := q.db.QueryRowContext(ctx, insertProduct,
 		arg.Name,
 		arg.Description,
+		arg.Sku,
 		arg.Price,
 		arg.Available,
 	)
@@ -103,14 +105,15 @@ func (q *Queries) ListProduct(ctx context.Context) ([]Product, error) {
 
 const updateProduct = `-- name: UpdateProduct :one
 UPDATE product
-SET name = $1, description = $2, price = $3, available = $4, version = version + 1
-  WHERE id = $5 AND version = $6
+SET name = $1, description = $2, sku = $3, price = $4, available = $5, version = version + 1
+  WHERE id = $6 AND version = $7
 RETURNING version
 `
 
 type UpdateProductParams struct {
 	Name        string         `json:"name"`
 	Description sql.NullString `json:"description"`
+	Sku         sql.NullString `json:"sku"`
 	Price       float64        `json:"price"`
 	Available   sql.NullBool   `json:"available"`
 	ID          int64          `json:"id"`
@@ -121,6 +124,7 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (i
 	row := q.db.QueryRowContext(ctx, updateProduct,
 		arg.Name,
 		arg.Description,
+		arg.Sku,
 		arg.Price,
 		arg.Available,
 		arg.ID,
