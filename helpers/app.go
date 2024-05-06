@@ -21,7 +21,7 @@ type App struct {
 	Cfg    config.Config
 	PGDB   *sql.DB
 	Rabbit *rabbit.RabbitClient
-  Logger *logger.Logger
+	Logger *logger.Logger
 }
 
 // Wrapper Function to connect to Postgres DB
@@ -69,19 +69,19 @@ func (app *App) Start(ctx context.Context) error {
 		Handler: app.Router,
 	}
 
-  app.Logger.Info("Server Started")
+	app.Logger.Info("Server Started")
 
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-      app.Logger.Fatal("Failed to Start server", zap.Error(err))
+			app.Logger.Fatal("Failed to Start server", zap.Error(err))
 		}
 	}()
 
 	select {
 	case <-ctx.Done():
 		timeout, cancel := context.WithTimeout(context.Background(), time.Second*10)
-    app.Logger.Info("Received Interrupt Signal, Closing Server")
+		app.Logger.Info("Received Interrupt Signal, Closing Server")
 		defer cancel()
 
 		return server.Shutdown(timeout)

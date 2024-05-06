@@ -33,11 +33,13 @@ func main() {
 
 	var productApp api.ProductApp
 
+	// Load and Sets the Config globally and passing the the Local app
 	cfg := config.LoadConfig(envVars)
+	config.SetGlobalConfig(&cfg)
 	app := helpers.NewApp(cfg)
 
 	serviceInfo := types.NewServiceInfo(
-		"User",
+		"product",
 		app.Cfg.Services.ProductServer.HOST,
 		app.Cfg.Services.ProductServer.PORT,
 	)
@@ -55,7 +57,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-  go consumers.StartConsumer()
+	go consumers.StartConsumer()
 	err = app.Start(ctx)
 	if err != nil {
 		app.Logger.Fatal("Failed to start the server", zap.Error(err))
