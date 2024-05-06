@@ -66,3 +66,14 @@ func LoadConfig(env map[string]string) Config {
 	}
 	return cfg
 }
+
+// Setting Config to access Globally
+var globalConfig *Config
+
+func SetGlobalConfig(c *Config) {
+	globalConfig = c
+}
+
+func GetConfig() *Config {
+	return globalConfig
+}
