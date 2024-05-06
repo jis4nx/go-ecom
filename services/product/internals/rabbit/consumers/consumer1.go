@@ -2,43 +2,41 @@ package consumers
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/jis4nx/go-ecom/pkg/rabbit"
+	"github.com/jis4nx/go-ecom/services/product/internals/rabbit/publisher"
+	"github.com/jis4nx/go-ecom/services/product/internals/rabbit/workers"
+	"github.com/jis4nx/go-ecom/services/utils"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
 func StartConsumer() {
+	app := utils.GetProductApp()
 	conn, err := rabbit.ConnectRabbitMQ("guest", "guest", "rabbit:5672", "/")
 	if err != nil {
-		log.Fatal("Start Consumer", err.Error())
+		app.Logger.Fatal("Failed to connect rabbitmq", zap.Error(err))
 	}
 
 	client, err := rabbit.NewRabbitClient(conn)
 	if err != nil {
-		log.Fatal(err.Error())
+		app.Logger.Fatal("Failed to create rabbitmq channel", zap.Error(err))
 	}
 
 	// Create Exchange
 	if err = client.CreateExchange("product_events", "topic", true, false); err != nil {
-		log.Println(err)
+		app.Logger.Fatal("Failed to create rabbitmq exchange", zap.Error(err))
 	}
 
 	// Decalrig New Queue
 	if err = client.NewQueue("product_created", true, false); err != nil {
-		log.Fatal(err)
+		app.Logger.Fatal("Failed to create rabbitmq queue", zap.Error(err))
 	}
 
 	// Create Binding with Queue & Routing key
 	if err = client.CreateBinding("product_created", "product.created.*", "product_events"); err != nil {
-		log.Fatal(err)
-	}
-
-	messageBus, err := client.Consume("product_created", "testConsumer1", false)
-	if err != nil {
-		log.Fatal(err.Error())
+		app.Logger.Fatal("Failed to create rabbitmq queue", zap.Error(err))
 	}
 
 	var blocking chan struct{}
@@ -48,21 +46,23 @@ func StartConsumer() {
 
 	g.SetLimit(10)
 
-	go func() {
-		for message := range messageBus {
-			msg := message
-			g.Go(func() error {
-				if err := msg.Ack(false); err != nil {
-					log.Println(err.Error())
-					return err
-				}
-				log.Println("Acknowldeged Message")
+	consumer, err := rabbit.NewConsumer()
+	if err != nil {
+		app.Logger.Error("Failed to create Consumer", zap.Error(err))
+	}
 
-				fmt.Println(msg)
-				return nil
-			})
-		}
-	}()
+  // starting the Product Creation worker
+	createWorker := workers.ProductWorkerFactory(publisher.ProductCreated)
+	createWorker.Start(&consumer, g)
+
+  // starting the Product Update worker
+	updateWorker := workers.ProductWorkerFactory(publisher.ProductUpdated)
+	updateWorker.Start(&consumer, g)
+
+	// Wait for all workers to finish
+	if err := g.Wait(); err != nil {
+		app.Logger.Error("Error in worker", zap.Error(err))
+	}
 
 	defer cancel()
 	<-blocking
