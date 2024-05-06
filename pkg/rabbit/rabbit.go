@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jis4nx/go-ecom/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -24,6 +25,24 @@ func NewRabbitClient(conn *amqp.Connection) (RabbitClient, error) {
 		return RabbitClient{}, err
 	}
 	return RabbitClient{conn: conn, ch: ch}, nil
+}
+
+func NewConsumer() (RabbitClient, error) {
+	config := config.GetConfig()
+	conn, err := ConnectRabbitMQ(config.RQ.USER, config.RQ.PASSWORD, config.RQ.HOST, config.RQ.VHOST)
+	if err != nil {
+		return RabbitClient{}, err
+	}
+	ch, err := conn.Channel()
+	if err != nil {
+		return RabbitClient{}, err
+	}
+	return RabbitClient{conn: conn, ch: ch}, nil
+}
+
+// Close the channel
+func (rc *RabbitClient) Close() {
+	rc.ch.Close()
 }
 
 func (rc *RabbitClient) NewQueue(name string, durable, autoDelete bool) error {
